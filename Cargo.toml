@@ -19,7 +19,7 @@ repository = "https://github.com/therealprof/microbit"
 version = "0.6.3"
 
 [dependencies]
-cortex-m = "0.5.8"
+alloc-cortex-m = "0.3.5"
 cortex-m-rt = "0.6.5"
 nb = "0.1.1"
 # cortex-m-semihosting = "0.3.1"
@@ -33,12 +33,25 @@ embedded-hal = "0.2.2"
 path = "../../../rustlib/nrf51-hal"
 # version = "0.5.5"
 
+[dependencies.cortex-m]
+## path = "../../../rustlib/cortex-m"
+version = "0.5.8"
+default-features = false
+features = ["inline-asm"]
+
+# cortex-m = "0.5.8"
+
+[dependencies.bmlite]
+path = "/home/simson/work/work48"
+default-features = false
+
 [dev-dependencies.rand]
 default-features = false
 version = "0.5.5"
 
 [profile.dev]
 debug = true
+codegen-units = 1
 
 [profile.release]
 debug = true
