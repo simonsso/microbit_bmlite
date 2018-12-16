@@ -22,14 +22,11 @@ use alloc_cortex_m::CortexMHeap;
 use microbit::hal::prelude::*;
 use microbit::hal::serial::BAUD115200;
 use microbit::hal::serial;
+use microbit::led::Display;
 extern crate bmlite;
 use bmlite::*;
-use microbit::hal::spi;
-//use microbit::hal::hal::blocking::spi::Transfer;
 extern crate embedded_hal;
-use embedded_hal::blocking::spi::Transfer;
 use microbit::hal;
-use embedded_hal::spi::FullDuplex;
 
 
 use cortex_m_rt::entry;
@@ -56,12 +53,23 @@ fn main() -> ! {
     if let Some(p) = microbit::Peripherals::take() {
         /* Split GPIO pins */
         let mut gpio = p.GPIO.split();
+        let mut delay = hal::delay::Delay::new(p.TIMER0);
 
-      /* Set row of LED matrix to permanent high */
-        let mut pin13 = gpio.pin13.into_push_pull_output();
-        pin13.set_high();
+      /* Set row of // LED matrix to permanent high */
 
-
+        let mut display = Display::new(
+            gpio.pin4.into_push_pull_output(),
+            gpio.pin5.into_push_pull_output(),
+            gpio.pin6.into_push_pull_output(),
+            gpio.pin7.into_push_pull_output(),
+            gpio.pin8.into_push_pull_output(),
+            gpio.pin9.into_push_pull_output(),
+            gpio.pin10.into_push_pull_output(),
+            gpio.pin11.into_push_pull_output(),
+            gpio.pin12.into_push_pull_output(),
+            gpio.pin13.into_push_pull_output(),
+            gpio.pin14.into_push_pull_output(),
+            gpio.pin15.into_push_pull_output());
 
         /* Initialise serial port on the micro:bit */
 
@@ -83,14 +91,6 @@ fn main() -> ! {
         let s = b"Hello tell me what you doing Commands 1 2 3 :\r\n";
         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
 
-        let s = b"Hej Knackt:\r\n";
-
-    //         Get som debyg pins
-        let mut led0 = gpio.pin8.into_push_pull_output();
-        let mut led1 = gpio.pin4.into_push_pull_output();
-        let mut led2 = gpio.pin6.into_push_pull_output();
-        let mut led3 = gpio.pin9.into_push_pull_output();
-        let mut led4 = gpio.pin12.into_push_pull_output();
 
         // Conect pins for reset and IRQ
         let mut spi_cs = gpio.pin16.into_push_pull_output();
@@ -105,72 +105,128 @@ fn main() -> ! {
         asm::delay(100);
         let _ans = bm.reset_end();
 
+        display.display(&mut delay,
+                        [[1,1,1,1,1,],
+                         [1,0,0,0,1,],
+                         [0,1,1,1,0,],
+                         [1,0,0,0,1,],
+                         [1,1,1,1,1,],
+        ],3000);
 
         loop {
-            let ans = bm.capture(0);
+            let mut fingerpresent = false;
+            display.display(&mut delay,
+                        [[0,0,0,0,0,],
+                         [0,0,0,0,0,],
+                         [0,1,1,1,0,],
+                         [0,0,0,0,0,],
+                         [0,0,0,0,0,],
+            ],30);
+            let ans = bm.capture(1000);
             match ans {
-                Ok(_) => {},
+                Ok(present) => { fingerpresent = present==0 },
                 Err(_) => {
-                    led1.set_high();
+                    // led1.set_high();
                     // let _ans = bm.reset();
                 },
             } // The user interface touch the sensor and btn at the same time to ensoll
             // Extreemly secure
             if btn_a.is_low(){
-                led0.set_high();
-                led1.set_high();
-                led2.set_high();
-                led3.set_high();
-                let _ans = bm.delete_all();
+                display.display(&mut delay,
+                        [[0,1,1,1,0,],
+                         [1,0,0,0,1,],
+                         [0,0,1,1,0,],
+                         [0,0,0,0,0,],
+                         [0,0,1,0,0,],
+                ],5000);
+
+                if btn_a.is_low(){
+                    let _ans = bm.delete_all();
+                }
+            }
+            if btn_b.is_low(){
+                // led0.set_high();
+                // led1.set_high();
+                // led2.set_high();
+                // led3.set_high();
+                display.display(&mut delay,
+                        [[1,1,1,1,1,],
+                         [0,0,0,0,0,],
+                         [0,0,0,0,0,],
+                         [0,0,0,0,0,],
+                         [1,1,1,1,1,],
+                ],1000);
                 let ans = bm.enroll();
                 match ans {
                     Ok(_) => {
                         let s=b"Finger enrolled";
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-                    
-                        led0.set_low();
-                        led1.set_low();
-                        led2.set_low();
-                        led3.set_low();
-                        led3.set_high();
+                        display.display(&mut delay,
+                                        [[1,1,1,1,1,],
+                                        [1,0,0,0,1,],
+                                        [1,0,0,0,1,],
+                                        [1,0,0,0,1,],
+                                        [1,1,1,1,1,],
+                                ],1000);
                     },
                     Err(_) => { 
                         loop{
-                            led0.set_low();
-                            led1.set_low();
-                            led2.set_low();
-                            led3.set_low();
-                            led0.set_high();
-                            led1.set_high();
+                          display.display(&mut delay,
+                               [[1,0,0,0,1,],
+                                [0,1,0,1,0,],
+                                [0,0,1,0,0,],
+                                [0,1,0,1,0,],
+                                [1,0,0,0,1,],
+                        ],300);
+                            // led0.set_low();
+                            // led1.set_low();
+                            // led2.set_low();
+                            // led3.set_low();
+                            // led0.set_high();
+                            // led1.set_high();
                         }
                     }
                 }
-            }else{
-                led0.set_low();
-                led1.set_low();
-                led2.set_low();
-                led3.set_low();
+            }else if fingerpresent{
+                // led0.set_low();
+                // led1.set_low();
+                // led2.set_low();
+                // led3.set_low();
                 let ans= bm.identify();
                 match ans {
                     Ok(id) => {
                         match id{
-                            0 => {led2.set_high()}
-                            1 => {led3.set_high()}
-                            2 => {led3.set_high();led2.set_high()}
+                            0 => {// led2.set_high()
+                            }
+                            1 => {// led3.set_high()
+                            }
+                            2 => {// led3.set_high();// led2.set_high()
+                            }
                             _ => {}
                         }
                         let s=b"Finger identifed as ";
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
                         let s= hex(id as u8);
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-
-                        asm::delay(5000000);
+                        display.display(&mut delay,
+                               [[0,1,1,1,0,],
+                                [1,0,0,0,1,],
+                                [1,0,0,0,1,],
+                                [1,0,0,0,1,],
+                                [0,1,1,1,0,],
+                        ],300);
                     }
                     Err(bmlite::Error::NoMatch) => {
-                        led0.set_high();
+                        // led0.set_high();
                         let s=b"Finger Not known.";
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-                    
+                        display.display(&mut delay,
+                               [[1,0,0,0,1,],
+                                [0,1,0,1,0,],
+                                [0,0,1,0,0,],
+                                [0,1,0,1,0,],
+                                [1,0,0,0,1,],
+                        ],300);
                     }
                     Err(_) => {/*let _ans=bm.reset();*/}
                 }
