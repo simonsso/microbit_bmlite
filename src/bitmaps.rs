@@ -7,6 +7,7 @@ pub mod img {
    ///     *  
    ///
    pub const question_mark:u32 = 0x01dbc7fd;
+
    ///   *   *
    ///    * * 
    ///     *  
@@ -38,6 +39,15 @@ pub mod img {
    ///        
    ///
    pub const hbars_center:u32 = 0x041fff07;
+
+   ///   *****
+   ///   *****
+   ///   *****
+   ///   *****
+   ///   *****
+   ///
+   pub const full_square:u32 = 0x00030000;
+
    ///        
    ///        
    ///     *  
@@ -48,19 +58,20 @@ pub mod img {
 
    ///        
    ///        
-   ///      * 
+   ///    *** 
    ///        
    ///        
    ///
-   pub const dot34:u32 = 0x03ffffff;
+   pub const minus:u32 = 0x03fff6ff;
 
    ///        
    ///        
-   ///       *
+   ///   *****
    ///        
    ///        
    ///
-   pub const dot35:u32 = 0x07fffdff;
+   pub const longminus:u32 = 0x03fff0ff;
+
    ///    * * 
    ///   *****
    ///   *****

@@ -8,6 +8,7 @@ use hal::gpio::gpio::{
 use hal::gpio::{Output, PushPull};
 use hal::prelude::*;
 
+use core::ptr::write_volatile;
 
 type LED = PIN<Output<PushPull>>;
 
@@ -19,6 +20,8 @@ const LED_LAYOUT: [[(usize, usize); 5]; 5] = [
     [(0, 7), (0, 6), (0, 5), (0, 4), (0, 3)],
     [(2, 2), (1, 6), (2, 0), (1, 5), (2, 1)],
 ];
+const OUTSET_REG:*mut u32 = 0x50000508 as *mut u32;
+const OUTCLR_REG:*mut u32 = 0x5000050C as *mut u32;
 
 /// Array of all the LEDs in the 5x5 display on the board
 pub struct Display {
@@ -28,7 +31,9 @@ pub struct Display {
 }
 
 impl Display {
+
     /// Initializes all the user LEDs
+    ///
     pub fn new(
         col1: PIN4<Output<PushPull>>,
         col2: PIN5<Output<PushPull>>,
@@ -121,8 +126,18 @@ impl Display {
             }
         }
     }
+
+    // Static LED patterns
+    // Set the LED outputs and return
+    pub fn display_static_raw(&mut self, out:u32) {
+        let out = 0xFFF0 & out;
+        unsafe{
+            write_volatile(OUTCLR_REG, 0xFFF0);
+            write_volatile(OUTSET_REG, out);
+        }
+    }
     // Display 3x9 matrix image for a given duration
- 
+
     pub fn display_pre_u32(&mut self, delay: &mut Delay, led_matrix:u32, duration_ms: u32) {
         // TODO: something more intelligent with timers
         let loops = duration_ms / (self.rows.len() as u32 * self.delay_ms);
@@ -131,22 +146,19 @@ impl Display {
                 let out_line = led_matrix>>(i*9) & 0x1FF; // Mask one line
                 let out_row = 1<<i ;
                 let out = (out_row<<13)| (out_line<<4);
-                // Will use direct access to the bits in from the pins we took 
+                // Will use direct access to the bits in from the pins we took
                 // in the constructor.
-
-                use core::ptr::write_volatile;
-
-
                 unsafe{
-                        const OUTSET_REG:*mut u32 = 0x50000508 as *mut u32;
-                        const OUTCLR_REG:*mut u32 = 0x5000050C as *mut u32;
+
                         write_volatile(OUTCLR_REG, 0xFFF0);
                         write_volatile(OUTSET_REG, out);
                 }
                 delay.delay_ms(self.delay_ms);
             }
         }
+        // Clear all bits on on exit
+        unsafe{
+            write_volatile(OUTCLR_REG, 0xFFF0);
+        }
     }
 }
-    
-

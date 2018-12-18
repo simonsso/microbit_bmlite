@@ -72,7 +72,7 @@ fn main() -> ! {
             gpio.pin13.into_push_pull_output(),
             gpio.pin14.into_push_pull_output(),
             gpio.pin15.into_push_pull_output());
-       
+
         display.display_pre_u32(&mut delay, bitmaps::img::square_image , 300);
         display.display_pre_u32(&mut delay, bitmaps::img::square_small_image, 300);
         display.display_pre_u32(&mut delay, bitmaps::img::dot33 , 300);
@@ -109,9 +109,8 @@ fn main() -> ! {
         let mut  btn_b = gpio.pin26.into_pull_up_input();
 
         let mut bm = BmLite::new(spix, spi_cs,spi_rst,spi_irq);
-        let _ans = bm.reset_start();
-        asm::delay(100);
-        let _ans = bm.reset_end();
+
+        let _ans = bm.reset(||{asm::delay(100);});
 
         loop {
             let mut fingerpresent = false;
@@ -120,7 +119,6 @@ fn main() -> ! {
             match ans {
                 Ok(present) => { fingerpresent = present==0 },
                 Err(_) => {
-                    // led1.set_high();
                     // let _ans = bm.reset();
                 },
             } // The user interface touch the sensor and btn at the same time to ensoll
@@ -132,22 +130,30 @@ fn main() -> ! {
                 }
             }
             if btn_b.is_low(){
-                // led0.set_high();
-                // led1.set_high();
-                // led2.set_high();
-                // led3.set_high();
                 display.display_pre_u32(&mut delay,bitmaps::img::hbars_top_botom,1000);
-                let ans = bm.enroll();
+
+                let ans = bm.enroll(|progress|
+                                        {
+                                            let pat = match progress{
+                                                0 => 0x3070,
+                                                1 => 0x30f0,
+                                                2 => 0x31f0,
+                                                3 => 0x33f0,
+                                                _ => 0x37f0,
+                                            };
+                                            display.display_static_raw(pat);
+                                         });
                 match ans {
                     Ok(_) => {
                         let s=b"Finger enrolled\r\n";
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-                        
-                        display.display_pre_u32(&mut delay, bitmaps::img::square_image,300);
-                        display.display_pre_u32(&mut delay, bitmaps::img::square_small_image,300);
-                        display.display_pre_u32(&mut delay, bitmaps::img::dot33,300);
+
+                        display.display_pre_u32(&mut delay, bitmaps::img::full_square,1000);
+                        display.display_pre_u32(&mut delay, bitmaps::img::square_image,200);
+                        display.display_pre_u32(&mut delay, bitmaps::img::square_small_image,200);
+                        display.display_pre_u32(&mut delay, bitmaps::img::dot33,200);
                     },
-                    Err(_) => { 
+                    Err(_) => {
                         loop{
                           display.display_pre_u32(&mut delay,bitmaps::img::x_big,3000);
                         }
@@ -157,12 +163,13 @@ fn main() -> ! {
                 let ans= bm.identify();
                 match ans {
                     Ok(id) => {
+                        display.display_pre_u32(&mut delay,bitmaps::img::circle,300);
                         match id{
-                            0 => {// led2.set_high()
+                            0 => {display.display_pre_u32(&mut delay, bitmaps::img::sword_image ,1400);
                             }
-                            1 => {// led3.set_high()
+                            1 => {display.display_pre_u32(&mut delay, bitmaps::img::pacman_image  ,1400);
                             }
-                            2 => {// led3.set_high();// led2.set_high()
+                            2 => {display.display_pre_u32(&mut delay, bitmaps::img::pitchfork_image ,1400);
                             }
                             _ => {}
                         }
