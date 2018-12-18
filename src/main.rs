@@ -46,6 +46,8 @@ fn hex(a:u8) -> [u8;2] {
     [hex_nible(a>>4),hex_nible(a)]
 }
 
+pub mod bitmaps;
+// use microbit::microbit_bitmaps as bitmaps;
 #[entry]
 fn main() -> ! {
     unsafe { ALLOCATOR.init(cortex_m_rt::heap_start() as usize, 2048 as usize) }
@@ -70,6 +72,12 @@ fn main() -> ! {
             gpio.pin13.into_push_pull_output(),
             gpio.pin14.into_push_pull_output(),
             gpio.pin15.into_push_pull_output());
+       
+        display.display_pre_u32(&mut delay, bitmaps::img::square_image , 300);
+        display.display_pre_u32(&mut delay, bitmaps::img::square_small_image, 300);
+        display.display_pre_u32(&mut delay, bitmaps::img::dot33 , 300);
+        display.display_pre_u32(&mut delay, bitmaps::img::diamond_small_image , 300);
+        display.display_pre_u32(&mut delay, bitmaps::img::diamond_image , 300);
 
         /* Initialise serial port on the micro:bit */
 
@@ -88,7 +96,7 @@ fn main() -> ! {
         //let mut spi = hal::
         /* Print a nice hello message */
 
-        let s = b"Hello tell me what you doing Commands 1 2 3 :\r\n";
+        let s = b"Hello connect BM Lite and start\r\n";
         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
 
 
@@ -105,23 +113,9 @@ fn main() -> ! {
         asm::delay(100);
         let _ans = bm.reset_end();
 
-        display.display(&mut delay,
-                        [[1,1,1,1,1,],
-                         [1,0,0,0,1,],
-                         [0,1,1,1,0,],
-                         [1,0,0,0,1,],
-                         [1,1,1,1,1,],
-        ],3000);
-
         loop {
             let mut fingerpresent = false;
-            display.display(&mut delay,
-                        [[0,0,0,0,0,],
-                         [0,0,0,0,0,],
-                         [0,1,1,1,0,],
-                         [0,0,0,0,0,],
-                         [0,0,0,0,0,],
-            ],30);
+            display.display_pre_u32(&mut delay,bitmaps::img::minus,30);
             let ans = bm.capture(1000);
             match ans {
                 Ok(present) => { fingerpresent = present==0 },
@@ -132,14 +126,7 @@ fn main() -> ! {
             } // The user interface touch the sensor and btn at the same time to ensoll
             // Extreemly secure
             if btn_a.is_low(){
-                display.display(&mut delay,
-                        [[0,1,1,1,0,],
-                         [1,0,0,0,1,],
-                         [0,0,1,1,0,],
-                         [0,0,0,0,0,],
-                         [0,0,1,0,0,],
-                ],5000);
-
+                display.display_pre_u32(&mut delay,bitmaps::img::question_mark,5000);
                 if btn_a.is_low(){
                     let _ans = bm.delete_all();
                 }
@@ -149,49 +136,24 @@ fn main() -> ! {
                 // led1.set_high();
                 // led2.set_high();
                 // led3.set_high();
-                display.display(&mut delay,
-                        [[1,1,1,1,1,],
-                         [0,0,0,0,0,],
-                         [0,0,0,0,0,],
-                         [0,0,0,0,0,],
-                         [1,1,1,1,1,],
-                ],1000);
+                display.display_pre_u32(&mut delay,bitmaps::img::hbars_top_botom,1000);
                 let ans = bm.enroll();
                 match ans {
                     Ok(_) => {
-                        let s=b"Finger enrolled";
+                        let s=b"Finger enrolled\r\n";
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-                        display.display(&mut delay,
-                                        [[1,1,1,1,1,],
-                                        [1,0,0,0,1,],
-                                        [1,0,0,0,1,],
-                                        [1,0,0,0,1,],
-                                        [1,1,1,1,1,],
-                                ],1000);
+                        
+                        display.display_pre_u32(&mut delay, bitmaps::img::square_image,300);
+                        display.display_pre_u32(&mut delay, bitmaps::img::square_small_image,300);
+                        display.display_pre_u32(&mut delay, bitmaps::img::dot33,300);
                     },
                     Err(_) => { 
                         loop{
-                          display.display(&mut delay,
-                               [[1,0,0,0,1,],
-                                [0,1,0,1,0,],
-                                [0,0,1,0,0,],
-                                [0,1,0,1,0,],
-                                [1,0,0,0,1,],
-                        ],300);
-                            // led0.set_low();
-                            // led1.set_low();
-                            // led2.set_low();
-                            // led3.set_low();
-                            // led0.set_high();
-                            // led1.set_high();
+                          display.display_pre_u32(&mut delay,bitmaps::img::x_big,3000);
                         }
                     }
                 }
             }else if fingerpresent{
-                // led0.set_low();
-                // led1.set_low();
-                // led2.set_low();
-                // led3.set_low();
                 let ans= bm.identify();
                 match ans {
                     Ok(id) => {
@@ -208,25 +170,13 @@ fn main() -> ! {
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
                         let s= hex(id as u8);
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-                        display.display(&mut delay,
-                               [[0,1,1,1,0,],
-                                [1,0,0,0,1,],
-                                [1,0,0,0,1,],
-                                [1,0,0,0,1,],
-                                [0,1,1,1,0,],
-                        ],300);
+                        display.display_pre_u32(&mut delay,bitmaps::img::circle,300);
                     }
                     Err(bmlite::Error::NoMatch) => {
                         // led0.set_high();
-                        let s=b"Finger Not known.";
+                        let s=b"Finger Not known.\r\n";
                         let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-                        display.display(&mut delay,
-                               [[1,0,0,0,1,],
-                                [0,1,0,1,0,],
-                                [0,0,1,0,0,],
-                                [0,1,0,1,0,],
-                                [1,0,0,0,1,],
-                        ],300);
+                        display.display_pre_u32(&mut delay,bitmaps::img::x_big, 300);
                     }
                     Err(_) => {/*let _ans=bm.reset();*/}
                 }

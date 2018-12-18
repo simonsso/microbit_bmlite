@@ -17,7 +17,7 @@ pub use nrf51::interrupt::*;
 pub use nrf51::*;
 
 use hal::gpio::gpio::Parts;
-use hal::serial::*;
+use hal::serial::{Rx, Serial, Tx, BAUDRATEW};
 
 pub mod led;
 

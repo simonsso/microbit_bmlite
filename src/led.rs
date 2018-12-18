@@ -8,6 +8,7 @@ use hal::gpio::gpio::{
 use hal::gpio::{Output, PushPull};
 use hal::prelude::*;
 
+
 type LED = PIN<Output<PushPull>>;
 
 const DEFAULT_DELAY_MS: u32 = 2;
@@ -120,4 +121,32 @@ impl Display {
             }
         }
     }
+    // Display 3x9 matrix image for a given duration
+ 
+    pub fn display_pre_u32(&mut self, delay: &mut Delay, led_matrix:u32, duration_ms: u32) {
+        // TODO: something more intelligent with timers
+        let loops = duration_ms / (self.rows.len() as u32 * self.delay_ms);
+        for _ in 0..loops {
+            for i in 0..3 {
+                let out_line = led_matrix>>(i*9) & 0x1FF; // Mask one line
+                let out_row = 1<<i ;
+                let out = (out_row<<13)| (out_line<<4);
+                // Will use direct access to the bits in from the pins we took 
+                // in the constructor.
+
+                use core::ptr::write_volatile;
+
+
+                unsafe{
+                        const OUTSET_REG:*mut u32 = 0x50000508 as *mut u32;
+                        const OUTCLR_REG:*mut u32 = 0x5000050C as *mut u32;
+                        write_volatile(OUTCLR_REG, 0xFFF0);
+                        write_volatile(OUTSET_REG, out);
+                }
+                delay.delay_ms(self.delay_ms);
+            }
+        }
+    }
 }
+    
+
