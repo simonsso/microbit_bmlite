@@ -2,3 +2,6 @@
 **/*.orig
 **/*.rs.bk
 Cargo.lock
+hello.jdebug
+hello.jdebug.user
+hello.code-workspace
