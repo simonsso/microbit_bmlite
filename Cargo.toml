@@ -30,8 +30,9 @@ panic-halt = "0.2.0"
 embedded-hal = "0.2.2"
 
 [dependencies.nrf51-hal]
-path = "../../../rustlib/nrf51-hal"
-# version = "0.5.5"
+# path = "../../../rustlib/nrf51-hal"
+git = "https://github.com/simonsso/nrf51-hal.git"
+branch = "spidev"
 
 [dependencies.cortex-m]
 ## path = "../../../rustlib/cortex-m"
@@ -42,7 +43,7 @@ features = ["inline-asm"]
 # cortex-m = "0.5.8"
 
 [dependencies.bmlite]
-path = "/home/simson/work/work48"
+git = "https://github.com/simonsso/lite.git"
 default-features = false
 
 [dev-dependencies.rand]
