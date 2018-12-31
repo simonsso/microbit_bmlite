@@ -27,6 +27,7 @@ extern crate bmlite;
 use bmlite::*;
 extern crate embedded_hal;
 use microbit::hal;
+use hal::spi::SpiExt;
 
 
 use cortex_m_rt::entry;
@@ -88,10 +89,10 @@ fn main() -> ! {
         /* Set up serial port using the prepared pins */
         let (mut tx, mut rx) = serial::Serial::uart0(p.UART0, tx, rx, BAUD115200).split();
 
-        let mut spix = hal::spi::Spi::spi0(p.SPI0,
-                 gpio.pin23.into_push_pull_output().downgrade(),
-                 gpio.pin21.into_push_pull_output().downgrade(),
-                 gpio.pin22.into_floating_input().downgrade());
+        let mut spix = p.SPI1.constrain( hal::spi::Pins{
+                sck: gpio.pin23.into_push_pull_output().downgrade(),
+                mosi: gpio.pin21.into_push_pull_output().downgrade(),
+                miso: gpio.pin22.into_floating_input().downgrade()});
 
         //let mut spi = hal::
         /* Print a nice hello message */
