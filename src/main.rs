@@ -75,31 +75,26 @@ fn main() -> ! {
             gpio.pin15.into_push_pull_output());
 
         display.display_pre_u32(&mut delay, bitmaps::img::square_image , 300);
-        display.display_pre_u32(&mut delay, bitmaps::img::square_small_image, 300);
-        display.display_pre_u32(&mut delay, bitmaps::img::dot33 , 300);
-        display.display_pre_u32(&mut delay, bitmaps::img::diamond_small_image , 300);
-        display.display_pre_u32(&mut delay, bitmaps::img::diamond_image , 300);
+
 
         /* Initialise serial port on the micro:bit */
 
         /* Configure RX and TX pins accordingly */
         let tx = gpio.pin24.into_push_pull_output().downgrade();
         let rx = gpio.pin25.into_floating_input().downgrade();
+        display.display_pre_u32(&mut delay, bitmaps::img::square_small_image, 300);
 
         /* Set up serial port using the prepared pins */
         let (mut tx, mut rx) = serial::Serial::uart0(p.UART0, tx, rx, BAUD115200).split();
+        display.display_pre_u32(&mut delay, bitmaps::img::dot33 , 300);
 
         let mut spix = p.SPI1.constrain( hal::spi::Pins{
                 sck: gpio.pin23.into_push_pull_output().downgrade(),
                 mosi: gpio.pin21.into_push_pull_output().downgrade(),
                 miso: gpio.pin22.into_floating_input().downgrade()});
 
-        //let mut spi = hal::
         /* Print a nice hello message */
-
-        let s = b"Hello connect BM Lite and start\r\n";
-        let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-
+        b"Hello, connect BM Lite and start\r\n".into_iter().map(|c| block!(tx.write(*c))).last();
 
         // Conect pins for reset and IRQ
         let mut spi_cs = gpio.pin16.into_push_pull_output();
@@ -112,6 +107,28 @@ fn main() -> ! {
         let mut bm = BmLite::new(spix, spi_cs,spi_rst,spi_irq);
 
         let _ans = bm.reset(||{asm::delay(100);});
+        display.display_pre_u32(&mut delay, bitmaps::img::diamond_small_image , 300);
+
+        match bm.get_version() {
+            Ok(message) => {
+                let _ = (&message).iter().chain(b"\r\n".into_iter()).map(|c| block!(tx.write(*c))).last();
+            }
+            Err(_) => {
+                b"Panic, get version returned error\r\nIs sensor connected?\r\n".into_iter().map(|c| block!(tx.write(*c))).last();
+                loop{
+                    display.display_pre_u32(&mut delay, bitmaps::img::sad_image, 800 );
+                    display.display_pre_u32(&mut delay, bitmaps::img::skull_image, 800 )
+                }
+            }
+        }
+        match bm.get_template_count() {
+            Ok(num) =>{
+                    b"Sensor modeule have ".into_iter().chain(hex(num as u8).into_iter()).chain(b" enrolled templates\r\n".into_iter()).map(|c| block!(tx.write(*c))).last();
+            }
+            other => {}
+        }
+
+        display.display_pre_u32(&mut delay, bitmaps::img::diamond_image , 300);
 
         loop {
             let mut fingerpresent = false;
@@ -122,8 +139,8 @@ fn main() -> ! {
                 Err(_) => {
                     // let _ans = bm.reset();
                 },
-            } // The user interface touch the sensor and btn at the same time to ensoll
-            // Extreemly secure
+            } 
+            // The user interface touch the sensor and btn at the same time to ensoll
             if btn_a.is_low(){
                 display.display_pre_u32(&mut delay,bitmaps::img::question_mark,5000);
                 if btn_a.is_low(){
@@ -135,7 +152,7 @@ fn main() -> ! {
 
                 let ans = bm.enroll(|progress|
                                         {
-                                            let pat = match progress{
+                                            let pat = match progress{  // Magic paterns as progress meter
                                                 0 => 0x3070,
                                                 1 => 0x30f0,
                                                 2 => 0x31f0,
@@ -146,8 +163,7 @@ fn main() -> ! {
                                          });
                 match ans {
                     Ok(_) => {
-                        let s=b"Finger enrolled\r\n";
-                        let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
+                        let _=b"Finger enrolled\r\n".into_iter().map(|c| block!(tx.write(*c))).last();
 
                         display.display_pre_u32(&mut delay, bitmaps::img::full_square,1000);
                         display.display_pre_u32(&mut delay, bitmaps::img::square_image,200);
@@ -164,6 +180,7 @@ fn main() -> ! {
                 let ans= bm.identify();
                 match ans {
                     Ok(id) => {
+                        b"Finger identifed as ".into_iter().chain(hex(id as u8).into_iter()).chain(b"\r\n".into_iter()).map(|c| block!(tx.write(*c))).last();
                         display.display_pre_u32(&mut delay,bitmaps::img::circle,300);
                         match id{
                             0 => {display.display_pre_u32(&mut delay, bitmaps::img::sword_image ,1400);
@@ -174,16 +191,11 @@ fn main() -> ! {
                             }
                             _ => {}
                         }
-                        let s=b"Finger identifed as ";
-                        let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
-                        let s= hex(id as u8);
-                        let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
                         display.display_pre_u32(&mut delay,bitmaps::img::circle,300);
                     }
                     Err(bmlite::Error::NoMatch) => {
                         // led0.set_high();
-                        let s=b"Finger Not known.\r\n";
-                        let _ = s.into_iter().map(|c| block!(tx.write(*c))).last();
+                        b"Finger Not known.\r\n".into_iter().map(|c| block!(tx.write(*c))).last();
                         display.display_pre_u32(&mut delay,bitmaps::img::x_big, 300);
                     }
                     Err(_) => {/*let _ans=bm.reset();*/}
