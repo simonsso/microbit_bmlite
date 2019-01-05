@@ -28,6 +28,7 @@ dcf77 = "0.1.0"
 mag3110 = "0.1.4"
 panic-halt = "0.2.0"
 embedded-hal = "0.2.2"
+embedded-hal-spy = { path = "/home/simson/work/baremetal2/embedded_hal_spy/" }
 
 [dependencies.nrf51-hal]
 # path = "../../../rustlib/nrf51-hal"
@@ -40,11 +41,10 @@ version = "0.5.8"
 default-features = false
 features = ["inline-asm"]
 
-# cortex-m = "0.5.8"
-
 [dependencies.bmlite]
-git = "https://github.com/simonsso/lite.git"
-default-features = false
+path = "/home/simson/work/work48"
+#git = "https://github.com/simonsso/lite.git"
+#default-features = false
 
 [dev-dependencies.rand]
 default-features = false
