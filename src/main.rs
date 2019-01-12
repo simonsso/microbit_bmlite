@@ -28,6 +28,7 @@ use bmlite::*;
 extern crate embedded_hal;
 use microbit::hal;
 use hal::spi::SpiExt;
+use core::cell::RefCell;
 
 extern crate embedded_hal_spy;
 
@@ -88,6 +89,17 @@ fn main() -> ! {
 
         /* Set up serial port using the prepared pins */
         let (mut tx, mut rx) = serial::Serial::uart0(p.UART0, tx, rx, BAUD115200).split();
+
+        // Store tx in a RefCell, a mutable borrow can be done both
+        // from permanet closures and from main scope.
+        // must not be left in scope while calling spi functions 
+        // with spi spy enabled.
+      
+        let sharetx = RefCell::new(tx);
+        {
+            let mut tx = sharetx.borrow_mut();
+            b"Hello, Hello\r\n".into_iter().map(|c| block!(tx.write(*c))).last();
+        }
         display.display_pre_u32(&mut delay, bitmaps::img::dot33 , 300);
 
         let mut spix = p.SPI1.constrain( hal::spi::Pins{
@@ -96,8 +108,9 @@ fn main() -> ! {
                 miso: gpio.pin22.into_floating_input().downgrade()});
 
         use embedded_hal_spy::DataWord;
-        let mut spix = embedded_hal_spy::Spy{s:spix,
-            f:|w|{
+        let mut spix = embedded_hal_spy::new(spix,
+            |w|{
+                let mut tx = sharetx.borrow_mut();
                 match w {
                     DataWord::First => {
                         b"data = [".into_iter().map(|c| block!(tx.write(*c))).last(); 
@@ -111,8 +124,10 @@ fn main() -> ! {
                     _other => {},
                 }
             }
-        };
+        );
         /* Print a nice hello message */
+
+        b"Hello, connect BM Lite and start\r\n".into_iter().map(|c| block!(sharetx.borrow_mut().write(*c))).last();
 
         // Conect pins for reset and IRQ
         let mut spi_cs = gpio.pin16.into_push_pull_output();
@@ -122,6 +137,33 @@ fn main() -> ! {
         let mut  btn_a = gpio.pin17.into_pull_up_input();
         let mut  btn_b = gpio.pin26.into_pull_up_input();
 
+        let mut spi_rst = embedded_hal_spy::new(spi_rst,
+            |w|{
+                let mut tx = sharetx.borrow_mut();
+                match w {
+                    DataWord::Byte(num) => {
+                        b"spi_rst:".into_iter().chain(hex(num).into_iter().chain(b"\r\n".into_iter())).map(|c| block!(tx.write(*c))).last();
+                        },
+                    _other => {},
+                }
+            }
+        );
+        let mut spi_irq = embedded_hal_spy::new(spi_irq,
+            |w|{
+                let mut tx = sharetx.borrow_mut();
+                match w {
+                    DataWord::Byte(num) => {
+                        if num == 0 {
+                           b".".into_iter().map(|c| block!(tx.write(*c))).last();
+                        }else{
+                           b"spi_irq:".into_iter().chain(hex(num).into_iter().chain(b"\r\n".into_iter())).map(|c| block!(tx.write(*c))).last();
+                        }
+                    },
+                    _other => {},
+                }
+            }
+        );
+
         let mut bm = BmLite::new(spix, spi_cs,spi_rst,spi_irq);
 
         let _ans = bm.reset(||{asm::delay(100);});
@@ -129,8 +171,10 @@ fn main() -> ! {
 
         match bm.get_version() {
             Ok(message) => {
+                let _ = (&message).iter().chain(b"\r\n".into_iter()).map(|c| block!(sharetx.borrow_mut().write(*c))).last();
             }
             Err(_) => {
+                b"Panic, get version returned error\r\nIs sensor connected?\r\n".into_iter().map(|c| block!(sharetx.borrow_mut().write(*c))).last();
                 loop{
                     display.display_pre_u32(&mut delay, bitmaps::img::sad_image, 800 );
                     display.display_pre_u32(&mut delay, bitmaps::img::skull_image, 800 )
@@ -139,6 +183,7 @@ fn main() -> ! {
         }
         match bm.get_template_count() {
             Ok(num) =>{
+                    b"Sensor modeule have ".into_iter().chain(hex(num as u8).into_iter()).chain(b" enrolled templates\r\n".into_iter()).map(|c| block!(sharetx.borrow_mut().write(*c))).last();
             }
             other => {}
         }
@@ -178,6 +223,8 @@ fn main() -> ! {
                                          });
                 match ans {
                     Ok(_) => {
+                        let _=b"Finger enrolled\r\n".into_iter().map(|c| block!(sharetx.borrow_mut().write(*c))).last();
+
                         display.display_pre_u32(&mut delay, bitmaps::img::full_square,1000);
                         display.display_pre_u32(&mut delay, bitmaps::img::square_image,200);
                         display.display_pre_u32(&mut delay, bitmaps::img::square_small_image,200);
@@ -193,6 +240,7 @@ fn main() -> ! {
                 let ans= bm.identify();
                 match ans {
                     Ok(id) => {
+                        b"Finger identifed as ".into_iter().chain(hex(id as u8).into_iter()).chain(b"\r\n".into_iter()).map(|c| block!(sharetx.borrow_mut().write(*c))).last();
                         display.display_pre_u32(&mut delay,bitmaps::img::circle,300);
                         match id{
                             0 => {display.display_pre_u32(&mut delay, bitmaps::img::sword_image ,1400);
@@ -207,6 +255,7 @@ fn main() -> ! {
                     }
                     Err(bmlite::Error::NoMatch) => {
                         // led0.set_high();
+                        b"Finger Not known.\r\n".into_iter().map(|c| block!(sharetx.borrow_mut().write(*c))).last();
                         display.display_pre_u32(&mut delay,bitmaps::img::x_big, 300);
                     }
                     Err(_) => {/*let _ans=bm.reset();*/}

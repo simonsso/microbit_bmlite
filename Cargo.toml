@@ -28,7 +28,7 @@ dcf77 = "0.1.0"
 mag3110 = "0.1.4"
 panic-halt = "0.2.0"
 embedded-hal = "0.2.2"
-embedded-hal-spy = "0.0.1"
+embedded-hal-spy = "0.0.3"
 
 [dependencies.nrf51-hal]
 # path = "../../../rustlib/nrf51-hal"
