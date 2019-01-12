@@ -1,21 +1,14 @@
 [package]
-authors = ["Daniel Egger <daniel@eggers-club.de>", "Michael Droogleever <droogmic@gmail.com>"]
+authors = ["Fredrik Simonsson simson@thesimson.net"]
 categories = [
     "hardware-support",
     "embedded",
     "no-std",
 ]
-description = "Board support crate for the BBC Micro:bit"
-documentation = "https://docs.rs/microbit"
-keywords = [
-    "arm",
-    "cortex-m",
-    "nrf51",
-]
 license = "0BSD"
 name = "microbit"
 readme = "README.md"
-repository = "https://github.com/therealprof/microbit"
+repository = "https://github.com/simonsso/hellomicrobit"
 version = "0.6.3"
 
 [dependencies]
@@ -30,12 +23,10 @@ panic-halt = "0.2.0"
 embedded-hal = "0.2.2"
 
 [dependencies.nrf51-hal]
-# path = "../../../rustlib/nrf51-hal"
 git = "https://github.com/simonsso/nrf51-hal.git"
 branch = "spidev"
 
 [dependencies.cortex-m]
-## path = "../../../rustlib/cortex-m"
 version = "0.5.8"
 default-features = false
 features = ["inline-asm"]
