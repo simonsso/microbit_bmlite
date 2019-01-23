@@ -130,9 +130,9 @@ fn main() -> ! {
         b"Hello, connect BM Lite and start\r\n".into_iter().map(|c| block!(sharetx.borrow_mut().write(*c))).last();
 
         // Conect pins for reset and IRQ
-        let mut spi_cs = gpio.pin16.into_push_pull_output();
-        let mut spi_rst = gpio.pin30.into_push_pull_output();
-        let mut spi_irq = gpio.pin0.into_pull_up_input();
+        let mut spi_cs = gpio.pin1.into_push_pull_output();    // Pad 2
+        let mut spi_rst = gpio.pin2.into_push_pull_output();   // Pad 1
+        let mut spi_irq = gpio.pin3.into_pull_up_input();      // Pad 0
 
         let mut  btn_a = gpio.pin17.into_pull_up_input();
         let mut  btn_b = gpio.pin26.into_pull_up_input();
