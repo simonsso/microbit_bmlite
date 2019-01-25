@@ -86,7 +86,7 @@ fn main() -> ! {
         display.display_pre_u32(&mut delay, bitmaps::img::square_small_image, 300);
 
         /* Set up serial port using the prepared pins */
-        let (mut tx, mut rx) = serial::Serial::uart0(p.UART0, tx, rx, BAUD115200).split();
+        let (mut tx, mut _rx) = serial::Serial::uart0(p.UART0, tx, rx, BAUD115200).split();
 
         // Store tx in a RefCell, a mutable borrow can be done both
         // from permanet closures and from main scope.
@@ -137,7 +137,7 @@ fn main() -> ! {
             Ok(num) =>{
                     b"Sensor modeule have ".into_iter().chain(hex(num as u8).into_iter()).chain(b" enrolled templates\r\n".into_iter()).map(|c| block!(sharetx.borrow_mut().write(*c))).last();
             }
-            other => {}
+            _other => {}
         }
 
         display.display_pre_u32(&mut delay, bitmaps::img::diamond_image , 300);
