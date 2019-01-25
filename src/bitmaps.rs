@@ -28,7 +28,9 @@
  * THE SOFTWARE.
  */
 
+
 pub mod img {
+   #![allow(non_upper_case_globals)]
 
    ///    *** 
    ///   *   *

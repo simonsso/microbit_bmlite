@@ -1,6 +1,6 @@
 #![no_std]
 #![allow(non_camel_case_types)]
-
+#![allow(unused_imports)]
 pub extern crate nrf51_hal as hal;
 
 pub extern crate cortex_m;
